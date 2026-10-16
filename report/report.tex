@@ -110,6 +110,8 @@ The \texttt{torch.no\_grad()} context manager is used for the reference forward 
 
 \textbf{Generation.} All models are configured as follows: the temperature and top-p are disabled (because greedy decoding is used), the repetition penalty is set to 1.1, there are at most 512 new tokens, and the models stop at EOS or \texttt{<|im\_end|>}. The Qwen models use the above template, while SmolLM2 has its own chat template.
 
+\textbf{Hardware and software.} All runs use Kaggle GPU T4 $\times$2 (two Tesla T4, 15\,GB each, confirmed with \texttt{nvidia-smi} at the start of every notebook) with PyTorch 2.11.0+cu128, Transformers 4.57.6 and Datasets 4.8.5. The LoRA run also uses TRL 0.29.1.
+
 \section{Parameter Choices and Deviations}
 
 \begin{table}[H]
