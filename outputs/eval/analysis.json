@@ -1,0 +1,159 @@
+{
+  "generations": {
+    "alpaca_base.json": {
+      "generator": "qwen2.5-0.5b-base",
+      "n": 300,
+      "mean_tokens": 409.58,
+      "hit_cap": 0.5933333333333334,
+      "refusal_rate": 0.06,
+      "refusal_by_category": {
+        "all": 0.06
+      }
+    },
+    "alpaca_dpo_hh.json": {
+      "generator": "qwen2.5-0.5b-dpo-hh",
+      "n": 300,
+      "mean_tokens": 161.85333333333332,
+      "hit_cap": 0.05,
+      "refusal_rate": 0.013333333333333334,
+      "refusal_by_category": {
+        "all": 0.013333333333333334
+      }
+    },
+    "alpaca_dpo_uf.json": {
+      "generator": "qwen2.5-0.5b-dpo-uf",
+      "n": 300,
+      "mean_tokens": 266.1933333333333,
+      "hit_cap": 0.07,
+      "refusal_rate": 0.006666666666666667,
+      "refusal_by_category": {
+        "all": 0.006666666666666667
+      }
+    },
+    "alpaca_sft.json": {
+      "generator": "qwen2.5-0.5b-sft",
+      "n": 300,
+      "mean_tokens": 184.15666666666667,
+      "hit_cap": 0.043333333333333335,
+      "refusal_rate": 0.023333333333333334,
+      "refusal_by_category": {
+        "all": 0.023333333333333334
+      }
+    },
+    "hh_base.json": {
+      "generator": "qwen2.5-0.5b-base",
+      "n": 300,
+      "mean_tokens": 392.37666666666667,
+      "hit_cap": 0.49333333333333335,
+      "refusal_rate": 0.08666666666666667,
+      "refusal_by_category": {
+        "harmful_instructions": 0.03333333333333333,
+        "benign_helpfulness": 0.0,
+        "legal_financial_safety": 0.1,
+        "hate_or_harassment": 0.16666666666666666,
+        "safe_transformation": 0.13333333333333333,
+        "cyber_abuse": 0.0,
+        "calibration_and_uncertainty": 0.06666666666666667,
+        "privacy_and_doxxing": 0.03333333333333333,
+        "medical_safety": 0.13333333333333333,
+        "self_harm_support": 0.2
+      }
+    },
+    "hh_dpo_hh.json": {
+      "generator": "qwen2.5-0.5b-dpo-hh",
+      "n": 300,
+      "mean_tokens": 141.56666666666666,
+      "hit_cap": 0.01,
+      "refusal_rate": 0.05,
+      "refusal_by_category": {
+        "harmful_instructions": 0.0,
+        "benign_helpfulness": 0.0,
+        "legal_financial_safety": 0.0,
+        "hate_or_harassment": 0.0,
+        "safe_transformation": 0.1,
+        "cyber_abuse": 0.0,
+        "calibration_and_uncertainty": 0.0,
+        "privacy_and_doxxing": 0.0,
+        "medical_safety": 0.0,
+        "self_harm_support": 0.4
+      }
+    },
+    "hh_sft.json": {
+      "generator": "qwen2.5-0.5b-sft",
+      "n": 300,
+      "mean_tokens": 168.45666666666668,
+      "hit_cap": 0.016666666666666666,
+      "refusal_rate": 0.02,
+      "refusal_by_category": {
+        "harmful_instructions": 0.0,
+        "benign_helpfulness": 0.0,
+        "legal_financial_safety": 0.0,
+        "hate_or_harassment": 0.0,
+        "safe_transformation": 0.0,
+        "cyber_abuse": 0.0,
+        "calibration_and_uncertainty": 0.0,
+        "privacy_and_doxxing": 0.0,
+        "medical_safety": 0.0,
+        "self_harm_support": 0.2
+      }
+    },
+    "persona_smollm2_instruct.json": {
+      "generator": "smollm2-360m-instruct",
+      "n": 40,
+      "mean_tokens": 214.85,
+      "hit_cap": 0.0,
+      "refusal_rate": 0.075,
+      "refusal_by_category": {
+        "cooking": 0.1,
+        "coding": 0.0,
+        "general_help": 0.0,
+        "safety_sensitive": 0.2
+      }
+    },
+    "persona_smollm2_lora_dpo.json": {
+      "generator": "smollm2-360m-lora-dpo",
+      "n": 40,
+      "mean_tokens": 202.825,
+      "hit_cap": 0.05,
+      "refusal_rate": 0.0,
+      "refusal_by_category": {
+        "cooking": 0.0,
+        "coding": 0.0,
+        "general_help": 0.0,
+        "safety_sensitive": 0.0
+      }
+    }
+  },
+  "judgments": {
+    "alpaca_dpo_hh_vs_sft_judged.jsonl": {
+      "judged": 300,
+      "retried": 62,
+      "position_a_rate": 0.5818965517241379,
+      "longer_wins_rate": 0.41810344827586204
+    },
+    "alpaca_dpo_uf_vs_sft_judged.jsonl": {
+      "judged": 299,
+      "retried": 83,
+      "position_a_rate": 0.550561797752809,
+      "longer_wins_rate": 0.48314606741573035
+    },
+    "hh_dpo_vs_sft_judged.jsonl": {
+      "judged": 300,
+      "retried": 94,
+      "position_a_rate": 0.5964285714285714,
+      "longer_wins_rate": 0.44642857142857145
+    },
+    "persona_lora_vs_instruct_helpful_safe_judged.jsonl": {
+      "judged": 40,
+      "retried": 0,
+      "position_a_rate": 0.5526315789473685,
+      "longer_wins_rate": 0.4473684210526316
+    },
+    "persona_lora_vs_instruct_style_judged.jsonl": {
+      "judged": 40,
+      "retried": 5,
+      "position_a_rate": 0.59375,
+      "longer_wins_rate": 0.3125
+    }
+  }
+}
