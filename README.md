@@ -74,3 +74,34 @@ tokens. Use one reduction consistently and document it in the report.
 ## Saving Work On Kaggle
 
 Kaggle sessions are temporary. Write important outputs under `/kaggle/working`, save notebook versions, and archive checkpoints/generations as zip files or Kaggle output datasets before ending a session.
+
+## Implementation In This Repository
+
+```text
+alignment/sft.py        prompt+response tokenization, response-only labels, log-probs, SFT loss
+alignment/dpo.py        chosen/rejected batches, tensor-level DPO loss, model-level DPO loss
+alignment/data.py       prompt template and dataset filtering (UltraChat, HH-RLHF, UltraFeedback)
+alignment/utils.py      seeding, JSON helpers, padding trim, cosine schedule
+submission_adapter.py   thin wrappers around alignment/sft.py and alignment/dpo.py
+scripts/train_sft.py            SFT training loop
+scripts/train_dpo.py            from-scratch DPO training loop (--dataset hh | ultrafeedback)
+scripts/train_lora_dpo.py       TRL DPOTrainer + LoRA persona run
+scripts/make_alpaca_subset.py   builds eval_sets/alpaca_eval_300_seed42.json
+scripts/generate.py             greedy generation on a fixed evaluation set
+scripts/build_pairs.py          randomized A/B pairwise files with hidden model identity
+scripts/judge_pairwise_kaggle.py  resumable pairwise judging through kaggle_benchmarks
+scripts/plot_metrics.py         training curves
+notebooks/01-06                 Kaggle notebooks, run in order
+tests/test_edge_cases.py        extra checks for truncation, padding, row order and DPO loss
+```
+
+Kaggle order: `01_sft` -> `02_dpo_hh` and `03_dpo_ultrafeedback` (input: 01) -> `04_lora_persona` ->
+`05_generate` (inputs: 01, 02, 03) -> `06_judge` (utility benchmark notebook, inputs: 04, 05).
+Metrics, generations, pairwise files and judgments are saved under `outputs/`. Model checkpoints are kept
+in the Kaggle notebook outputs and are not committed.
+
+Run all tests locally with:
+
+```bash
+PYTHONPATH=. python -m pytest -q tests/
+```
