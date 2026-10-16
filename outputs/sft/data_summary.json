@@ -1,0 +1,12 @@
+{
+  "dataset": "HuggingFaceH4/ultrachat_200k",
+  "train_split": "train_sft",
+  "val_split": "test_sft",
+  "train_examples": 30000,
+  "val_examples": 1000,
+  "train_rows_scanned": 52926,
+  "val_rows_scanned": 1846,
+  "max_prompt_length": 512,
+  "max_length_filter": 512,
+  "seed": 42
+}

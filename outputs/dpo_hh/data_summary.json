@@ -1,0 +1,12 @@
+{
+  "dataset": "Anthropic/hh-rlhf",
+  "train_split": "train",
+  "val_split": "test",
+  "train_examples": 15000,
+  "val_examples": 1000,
+  "train_rows_scanned": 49371,
+  "val_rows_scanned": 3393,
+  "max_prompt_length": 256,
+  "max_length_filter": null,
+  "seed": 42
+}
