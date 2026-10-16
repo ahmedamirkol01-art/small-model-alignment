@@ -24,7 +24,7 @@
 \section{Repository, Models, and Data}
 
 \textbf{Repository:} \url{https://github.com/ahmedamirkol01-art/small-model-alignment}.
-The central math is encapsulated by the file \texttt{submission\_adapter.py}, and implemented in \texttt{alignment/sft.py} and \texttt{alignment/dpo.py}.
+The core math is implemented in \texttt{alignment/sft.py} and \texttt{alignment/dpo.py}, and \texttt{submission\_adapter.py} only wraps it.
 The training, generation and judging scripts are located in the \texttt{scripts/} directory and the Kaggle notebooks are found in the \texttt{notebooks/} directory and are run in order.
 
 \textbf{Models.} The base model is \texttt{Qwen/Qwen2.5-0.5B}~\cite{qwen}. It is trained as an instruction model by SFT, and the from-scratch DPO runs start at the SFT \texttt{best} checkpoint. The LoRA Persona run is performed using \texttt{HuggingFaceTB/SmolLM2-360M-Instruct}.
@@ -39,15 +39,15 @@ You are a helpful assistant.<|im_end|>
 <|im_start|>assistant
 \end{verbatim}
 }
-\noindent The target should be the answer that is followed by the tokenizer EOS token (\texttt{<|endoftext|>}).
+\noindent The target response is followed by the tokenizer EOS token (\texttt{<|endoftext|>}).
 Prompt and response are tokenized individually without any special tokens, and the tokenized response is appended to the tokenized prompt.
-EOS is added first, then the sequence is cut off at the context length, so if a response is cut off, the EOS sign will be missing.
+EOS is added first, then the sequence is cut off at the context length, so if a response is cut off, the EOS token will be missing.
 SmolLM2 is using its own chat template via TRL and via \texttt{generate.py --use\_chat\_template}.
 
 \textbf{Data.} All selection uses seed 42. For each split in the data set, the data is shuffled with \texttt{datasets.shuffle(seed=42)} and then filtered in order until the desired set size is reached. Table~\ref{tab:data} lists the number of examples in each set.
 \begin{itemize}
-\item \textbf{SFT} (\texttt{HuggingFaceH4/ultrachat\_200k}~\cite{ultrachat}): user turn 0 and assistant turn 1 of the conversation are used. If the complete formatted sequence (prompt, response and EOS) is contained in 512 tokens then it is kept. Thus, all training objectives end with an EOS.
-\item \textbf{HH-RLHF} (\texttt{Anthropic/hh-rlhf}~\cite{hh}): only single turn pairs (one \texttt{Human:} and one \texttt{Assistant:} turn). Selected and rejected prompts should be identical, and the two responses should not be empty and should differ.
+\item \textbf{SFT} (\texttt{HuggingFaceH4/ultrachat\_200k}~\cite{ultrachat}): user turn 0 and assistant turn 1 of the conversation are used. If the complete formatted sequence (prompt, response and EOS) is contained in 512 tokens then it is kept. Thus, every target response ends with an EOS token.
+\item \textbf{HH-RLHF} (\texttt{Anthropic/hh-rlhf}~\cite{hh}): only single turn pairs (one \texttt{Human:} and one \texttt{Assistant:} turn). Chosen and rejected prompts should be identical, and the two responses should not be empty and should differ.
 \item \textbf{UltraFeedback} (\texttt{HuggingFaceH4/ultrafeedback\_binarized}~\cite{uf}): single turn pairs with \texttt{score\_chosen > score\_rejected}.
 \end{itemize}
 Both of the DPO data sets drop prompts over 256 tokens. There is no length filter on responses: sequences are cut at 512 tokens.
@@ -125,12 +125,13 @@ The \texttt{torch.no\_grad()} context manager is used for the reference forward 
 \multicolumn{4}{l}{\emph{Resource-driven}} \\
 Padding & pad to 512 & trim shared right padding per batch & With causal attention and padding on the right side, trimming the shared padding does not change the loss, and it cuts wasted compute. \\
 SFT val batch & -- & 4 & Keeps the fp32 log-softmax over the 151k vocabulary within T4 memory. \\
-Reference precision & fp16 allowed & fp32 weights + fp16 autocast & There is room on cuda:1, so the policy and reference then follow the same numerics, and step-0 rewards are simply 0. \\
 \midrule
 \multicolumn{4}{l}{\emph{Performance-driven}} \\
-SFT data & 30k examples & 30k examples that fit in 512 tokens & Each goal is followed by an EOS, thus the model gets trained to stop. \\
+Reference precision & fp16 allowed & fp32 weights + fp16 autocast & Uses more memory, but there is room on cuda:1. The policy and reference then follow the same numerics, so step-0 rewards are exactly 0. \\
+SFT data & 30k examples & 30k examples that fit in 512 tokens & Every target response ends with an EOS token, so the model learns to stop. \\
 DPO optimizer & RMSprop or AdamW & AdamW, weight decay 0 & Without warmup, AdamW's bias correction avoids the ``oversized'' first steps of RMSprop. \\
-LoRA setup & student choice & see Table~\ref{tab:config} & For LoRA~\cite{lora}, we use rank 16 on all attention and MLP projections, which is sufficient to alter the style. Since only a small amount of parameters are updated in LoRA, the learning rate is about 50$\times$ the full model DPO rate, and 3 epochs suit only 200 pairs. Losses were stable in a 3-step pilot. Following the full run, 5 sanity outputs were clearly different in style, so the setting was kept. \\
+Decoding & greedy & greedy + repetition penalty 1.1 & Small models fall into repetitive loops with plain greedy decoding, and the manual allows a modest penalty. The same value is used for every model, so the judge compares models, not decoding. \\
+LoRA setup & student choice & see Table~\ref{tab:config} & LoRA~\cite{lora} uses rank 16 on all attention and MLP projections, which is sufficient to alter the style. Since only a small amount of parameters are updated in LoRA, the learning rate is about 50$\times$ the full model DPO rate, and 3 epochs suit only 200 pairs. Losses were stable in a 3-step pilot. Following the full run, 5 sanity outputs were clearly different in style, so the setting was kept. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -162,8 +163,8 @@ The median norm of the gradient before clipping was 4.5 and there was no step sk
 \end{itemize}
 The gap corresponds to label noise. Many HH-RLHF pairs are very similar, and the agreement rate of the annotators in such pairs is also known to be low. UltraFeedback pairs are from a ranked scoring with a more apparent difference in quality.
 At the best step in HH-RLHF, both implicit rewards are negative (chosen $-0.35$, rejected $-0.61$): the policy decreases the likelihood of both answers, and decreases the rejected answer further. For the case of UltraFeedback, the chosen reward is still close to zero, and the rejected reward is decreased to $-0.67$.
-Gradient-norm clipping at 1.0 was always on, as the sequence log-probabilities are sums over hundreds of tokens, resulting in median pre-clip norms of 42 (HH) and 57 (UF).
-During each run, the loss scaler for fp16 mode skipped 3 out of 468 optimizer steps (HH: steps 1, 5, 141; UF: steps 1, 8, 285). The first two skipped steps in each run happened during calibration of the scale.
+Gradient-norm clipping at 1.0 was active at every step, as the sequence log-probabilities are sums over hundreds of tokens, resulting in median pre-clip norms of 42 (HH) and 57 (UF).
+During each run, the loss scaler for fp16 mode skipped 3 out of 468 optimizer steps (HH: steps 1, 5, 141; UF: steps 1, 8, 285). The first two skipped steps in each run happened while the GradScaler was still finding its loss scale.
 The validation curves do not appear to be overfitting within one epoch, since there is no validation curve at the end that is rising. Only preference fit (not response quality) is described by these curves; response quality is measured in Section~\ref{sec:results}.
 
 \textbf{LoRA-DPO.} The held-out reward accuracy is 1.0 from the first evaluation (step 5), and the margin increases steadily to 2.15. The 20 pairs that were not used in the training process are easily separated (styled vs.\ neutral), so the accuracy alone is not particularly indicative of the quality of the style transfer.
@@ -244,11 +245,7 @@ Hit the 512-token cap & 59\% & 4\% & 7\% & 5\% & 49\% & 2\% & 1\% \\
 
 \textbf{Persona result (LoRA) (reported separately).} The LoRA-DPO model is compared to the unmodified SmolLM2-360M-Instruct on the 40 persona prompts, using two separate judge rubrics.
 \begin{itemize}
-\item \textbf{Persona style rubric} (faithful to Ramsay style persona; helpful and safe): 19 wins, 8 ties, 13 losses. That is a win rate of 0.575 with ties as half, 95\% CI [0.42, 0.76] without ties.
-\begin{itemize}
-\item The gains are in cooking (8--1--1) and general help (5--0--5).
-\item Coding (3--5--2) and safety-sensitive prompts (3--7--0) lose.
-\end{itemize}
+\item \textbf{Persona style rubric} (faithful to Ramsay style persona; helpful and safe): 19 wins, 8 ties, 13 losses. That is a win rate of 0.575 with ties as half, 95\% CI [0.42, 0.76] without ties. The gains are in cooking (8--1--1) and general help (5--0--5), while coding (3--5--2) and safety-sensitive prompts (3--7--0) lose.
 \item \textbf{Helpfulness and safety rubric} (safety rubric above): 11 wins, 2 ties, 27 losses. This is a win rate of 0.300, 95\% CI [0.15, 0.43] without ties, with losses in every category.
 \end{itemize}
 The adapter was thus more ``faithfully'' stylized when it came to the training data (cooking), but less useful. It introduced inaccuracies in its content (e.g.\ it claims the grey, limp green beans were boiled ``not long enough'', whereas the base model correctly claims too long) and used theatrical framing in place of substance.
@@ -263,55 +260,35 @@ The adapter was thus more ``faithfully'' stylized when it came to the training d
 \end{itemize}
 Where the preference data matches the evaluation, the judge prefers DPO a little more often than not, but this change is much smaller than the change from the base model to SFT, which turned 59\% runaway generations into answers that stop (Table~\ref{tab:length}).
 
-\textbf{Interpretation: UltraFeedback.} The UltraFeedback model writes 45\% longer answers than SFT (266 tokens vs.\ 184 tokens), it has more structure, and it includes more examples and finally a summary at the end. This aligns with UltraFeedback's desire for in-depth responses such as those provided by GPT-4.
+\textbf{Interpretation: UltraFeedback.} The UltraFeedback model writes 45\% longer answers than SFT (266 tokens vs.\ 184 tokens), it has more structure, and it includes more examples and finally a summary at the end. This matches UltraFeedback, whose responses come from many different models and were rated by GPT-4, with detailed answers usually rated higher.
 The judge was not only looking for length: the longer answer in decided pairs only won 48\% of the time.
 The wins are in the content that's more relevant, such as the answer to a career inquiry that listed job titles, and fewer obvious errors made (the judge noticed a colour symbolism in the SFT answer relating to Christmas wreaths that was not there).
-The losses result from missing details (paper summary that leaves out a key mechanism). Facts are not improved: both models include a gorilla and living bears as ``extinct bear species''. DPO changes preference, it DOES NOT change knowledge.
+The losses result from missing details (paper summary that leaves out a key mechanism). Facts are not improved: both models include a gorilla and living bears as ``extinct bear species''. DPO changed the style of the answers, not what the model knows.
 While the accuracy of the validation reward is high (0.74), this is only partly visible in judged quality. The policy learned to separate UltraFeedback pairs much more than it learned to generate improved responses.
 
 \textbf{Interpretation: HH-RLHF.} The near-tie is explained by the per-category table (Table~\ref{tab:hhcat}).
 \begin{itemize}
 \item DPO's strengths: harmful instructions (18--9), legal/financial safety (18--11), benign helpfulness (19--11).
-\item It is down on both self-harm support (7--23) and calibration (9--17).
+\item It is down on both self-harm support (7--23) and calibration (9--17). The self-harm category has only 5 unique prompts, each repeated 6 times, so the 7--23 result reflects 5 different requests.
 \item This is evident in the outputs: HH-DPO reproduces the assistant voice of HH-RLHF, such as the disclaimer ``I am not capable of feeling emotions, but\ldots'', lowercase beginning of sentences, and also shorter answers (142 vs.\ 169 tokens). When asked to write a supportive message for someone who thinks they are a burden, its answer was called ``robotic'' by the judge, who preferred SFT's heartfelt message template.
 \item A lot of ``wins'' for DPO are only ``less bad'' if the request is bad. Both models yield steps for car sabotage; the DPO answer starts to go towards diagnosing the car, and the judge tallied this as a safe reframe.
-\item These two models can't be guaranteed to refuse. The percentage of explicit refusal phrases is 2\% (SFT) and 5\% (DPO).
+\item Neither model refuses harmful requests reliably. The percentage of explicit refusal phrases is 2\% (SFT) and 5\% (DPO).
 \end{itemize}
-These patterns are consistent with the training diagnostics. The HH validation accuracy stopped improving at 0.65, as would be expected given the known label noise in HH-RLHF, and both implicit rewards were negative, which means DPO also reduced the probability of the selected responses. The policy shifted more in style (tone, disclaimers, length) than in safety behaviour with 0.5B parameters and $\beta = 0.1$ after one epoch.
+These patterns are consistent with the training diagnostics. The HH validation accuracy stopped improving at 0.65, as would be expected given the known label noise in HH-RLHF, and both implicit rewards were negative, which means DPO also reduced the probability of the chosen responses. The policy shifted more in style (tone, disclaimers, length) than in safety behaviour with 0.5B parameters and $\beta = 0.1$ after one epoch.
 
 \textbf{Interpretation: persona LoRA.} Style alignment worked where the data was: cooking prompts got a strong Ramsay voice. It didn't generalise to coding and safety prompts, where the insults hurt. The typical trade-off is reflected in the large loss on helpfulness and safety (30\% win rate).
-The persona pairings consist of a stylized but correct selected response and a neutral and correct rejected one, which is typically de-emphasized by the DPO. Three epochs of a 360M model with a learning rate of $5\times10^{-5}$ created disturbance in the content as well. This was completely masked by the held-out reward accuracy of 1.0.
+In the persona pairs, both answers are correct: the chosen one is in the Ramsay style and the rejected one is neutral. So DPO mainly learns to push down the neutral wording, not wrong content. Even so, three epochs on a 360M model with a learning rate of $5\times10^{-5}$ also damaged the content of some answers. This was completely masked by the held-out reward accuracy of 1.0.
 
-\textbf{Takeaways.} Reward accuracy and DPO loss measure fit to preference pairs, not answer quality. Both DPO tracks were more of a change in style than in substance, and the safety track shows that data collected from preferences can be used to learn disclaimers (unwanted surface behavior) as well as the desired behavior.
+Overall, a high reward accuracy or a low DPO loss did not mean better answers here. Both DPO tracks changed the style more than the substance, and the safety track shows that preference data can also teach unwanted habits such as disclaimers.
 
 \section{Limitations and Reproducibility}
-\begin{itemize}
-\item \textbf{Judge bias and noise.}
-  \begin{itemize}
-  \item One LLM judge (one judgement per pair).
-  \item Among decided pairs, the response in position A won 55--60\% of the time. The ordering is random (151 of 300 DPO responses are in position A), so there is noise but no bias in favor of either model.
-  \item There are some examples of judgment reasons that are false, like in the above car-sabotage case.
-  \item If the pairs could be judged both ways, position bias would be lessened.
-  \end{itemize}
-\item \textbf{Small evaluation sets and 1 seed.}
-  \begin{itemize}
-  \item The interval on the win rate around 300 prompts is $\pm$6\%, which means that none of the three differences in win rate between DPO and SFT is significant at the 5\% level. There are 40 prompts in the persona set.
-  \item There are some duplicate instructions in the HH evaluation set provided.
-  \item The same seed (42) is used for all runs.
-  \end{itemize}
-\item \textbf{Compute.}
-  \begin{itemize}
-  \item We did not sweep $\beta$ and learning rate on T4s; each DPO run was one epoch with a fixed $\beta = 0.1$.
-  \item About 28\% of the selected responses were truncated at 512 tokens for UltraFeedback, measured on a sample of 2{,}000 pairs.
-  \end{itemize}
-\item \textbf{Reproducibility.}
-  \begin{itemize}
-  \item The configuration, data summary and per-step metrics of each run are in \texttt{outputs/<run>/}.
-  \item The \texttt{outputs/generations/} folder contains the generations. Pairwise files, judgments, failures and summaries are in \texttt{outputs/eval/}.
-  \item \texttt{scripts/plot\_metrics.py} generates the figures and \texttt{scripts/analyze\_results.py} provides data on length and judge-bias.
-  \item Each stage of these experiments is executed sequentially in the Kaggle notebooks \texttt{notebooks/01} -- \texttt{notebooks/06}.
-  \end{itemize}
-\end{itemize}
+Only one LLM judge was used, with one judgement per pair. Among decided pairs, the response in position A won 55--60\% of the time. The ordering is random (151 of 300 DPO responses are in position A), so this adds noise but no bias in favor of either model. Some judgment reasons are also false, like in the above car-sabotage case. Judging each pair in both orders would lessen the position bias.
+
+The evaluation sets are small and only one seed (42) is used for all runs. With 300 prompts the interval on the win rate is about $\pm$6\%, so none of the three differences in win rate between DPO and SFT is significant at the 5\% level, and the persona set has only 40 prompts. The provided HH evaluation set also repeats prompts: only 185 of its 300 rows are unique (115 are duplicates, and some prompts appear 6 times), so its effective size is smaller than 300.
+
+Because of the T4 compute budget, $\beta$ and the learning rate were not swept; each DPO run was one epoch with a fixed $\beta = 0.1$.
+
+For reproducibility, the configuration, data summary and per-step metrics of each run are in \texttt{outputs/<run>/}, the generations are in \texttt{outputs/generations/}, and the pairwise files, judgments, failures and summaries are in \texttt{outputs/eval/}. \texttt{scripts/plot\_metrics.py} generates the figures and \texttt{scripts/analyze\_results.py} provides the length and judge-bias data. The Kaggle notebooks \texttt{notebooks/01} -- \texttt{notebooks/06} run each stage in order.
 
 \begin{thebibliography}{9}\small
 \bibitem{dpo} R.~Rafailov et al. Direct Preference Optimization: Your Language Model is Secretly a Reward Model. NeurIPS 2023.

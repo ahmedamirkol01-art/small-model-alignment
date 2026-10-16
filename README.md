@@ -1,20 +1,6 @@
-# Small-Model Alignment Starter
+# Small-Model Alignment: SFT and DPO on Qwen2.5-0.5B
 
-This branch is the student starter package for the SFT + DPO alignment assignment. It is intentionally minimal: it provides the tested environment metadata, assignment PDF, fixed evaluation/data files, and no completed training implementation.
-
-## What Is Included
-
-```text
-requirements.txt
-pyproject.toml
-submission_adapter.py
-tests/test_public_adapter_smoke.py
-tests/toy_lm.py
-docs/assignment_manual.pdf
-data/persona_lora/ramsay_style_preferences.json
-data/persona_lora/README.md
-eval_sets/hh_rlhf_eval_300_seed42.json
-```
+Supervised fine-tuning of `Qwen/Qwen2.5-0.5B` on UltraChat, from-scratch DPO on HH-RLHF and UltraFeedback, and a TRL `DPOTrainer` + LoRA persona run on `HuggingFaceTB/SmolLM2-360M-Instruct`, evaluated with pairwise judgments from a Kaggle model. The report is in `report/report.tex`.
 
 ## Recommended Kaggle Setup
 
@@ -27,19 +13,6 @@ python -m pip install -q -e . --no-deps
 ```
 
 This keeps Kaggle's preinstalled CUDA-compatible PyTorch intact, avoids known stale `torchao` / PEFT conflicts, and makes the local repository importable without replacing the GPU stack.
-
-## What You Need To Build
-
-You will add your own training and evaluation code on top of this starter. At minimum, your project should implement:
-
-- SFT training on 30,000 examples.
-- From-scratch DPO on HH-RLHF-style preference data.
-- From-scratch DPO on UltraFeedback-style preference data.
-- TRL `DPOTrainer` + LoRA training on the provided persona preference data.
-- Generation and DPO-vs-SFT evaluation outputs.
-- A short final report with plots and analysis.
-
-Read `docs/assignment_manual.pdf` for the full requirements and suggested workflow.
 
 ## Submission Adapter And Public Tests
 
@@ -56,8 +29,8 @@ PYTHONPATH=. python -m pytest -q tests/test_public_adapter_smoke.py
 ```
 
 The tests use a tiny local tokenizer and model, so they do not download a model,
-load the assignment datasets, or require a GPU. The starter adapter raises
-`NotImplementedError` until you connect it to your implementation. Passing the
+load the assignment datasets, or require a GPU. In this repository the adapter
+calls `alignment/sft.py` and `alignment/dpo.py`, and all public tests pass. Passing the
 public tests checks the interface and a few basic invariants; the private grader
 also checks numerical correctness and harder edge cases described in the manual.
 
@@ -70,10 +43,6 @@ tokens. Use one reduction consistently and document it in the report.
 - `eval_sets/hh_rlhf_eval_300_seed42.json` is the fixed synthetic helpful/harmless evaluation set.
 - For AlpacaEval-style evaluation, use 300 prompts with seed `42` so comparisons are consistent.
 - `data/persona_lora/ramsay_style_preferences.json` is the small preference dataset for the LoRA-DPO persona task.
-
-## Saving Work On Kaggle
-
-Kaggle sessions are temporary. Write important outputs under `/kaggle/working`, save notebook versions, and archive checkpoints/generations as zip files or Kaggle output datasets before ending a session.
 
 ## Implementation In This Repository
 
