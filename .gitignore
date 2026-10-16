@@ -1,2 +1,9 @@
 __pycache__/
 *.py[cod]
+.pytest_cache/
+outputs/**/best/
+outputs/**/final/
+outputs/**/adapter/
+outputs/**/checkpoint-*/
+outputs/**/*.safetensors
+*.zip
