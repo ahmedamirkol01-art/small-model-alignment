@@ -92,6 +92,8 @@ scripts/generate.py             greedy generation on a fixed evaluation set
 scripts/build_pairs.py          randomized A/B pairwise files with hidden model identity
 scripts/judge_pairwise_kaggle.py  resumable pairwise judging through kaggle_benchmarks
 scripts/plot_metrics.py         training curves
+scripts/analyze_results.py      response lengths, refusal phrases and judge position/length bias
+report/report.tex               final report source (figures in report/figures/)
 notebooks/01-06                 Kaggle notebooks, run in order
 tests/test_edge_cases.py        extra checks for truncation, padding, row order and DPO loss
 ```
