@@ -7,7 +7,7 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from alignment.data import format_prompt
-from alignment.utils import read_json, write_json
+from alignment.jsonio import read_json, write_json
 
 
 def parse_args():

@@ -8,7 +8,8 @@ from peft import LoraConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOConfig, DPOTrainer
 
-from alignment.utils import read_json, set_seed, write_json
+from alignment.jsonio import read_json, write_json
+from alignment.utils import set_seed
 
 TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 

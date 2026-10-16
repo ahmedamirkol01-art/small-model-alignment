@@ -3,7 +3,7 @@ import json
 import os
 import random
 
-from alignment.utils import read_json
+from alignment.jsonio import read_json
 
 
 def main():

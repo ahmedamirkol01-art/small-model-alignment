@@ -6,7 +6,7 @@ import time
 
 import kaggle_benchmarks as kbench
 
-from alignment.utils import append_jsonl, read_jsonl, write_json
+from alignment.jsonio import append_jsonl, read_jsonl, write_json
 
 GENERAL = (
     "Compare the responses on helpfulness, correctness, instruction-following, concision when appropriate, "

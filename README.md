@@ -81,7 +81,8 @@ Kaggle sessions are temporary. Write important outputs under `/kaggle/working`, 
 alignment/sft.py        prompt+response tokenization, response-only labels, log-probs, SFT loss
 alignment/dpo.py        chosen/rejected batches, tensor-level DPO loss, model-level DPO loss
 alignment/data.py       prompt template and dataset filtering (UltraChat, HH-RLHF, UltraFeedback)
-alignment/utils.py      seeding, JSON helpers, padding trim, cosine schedule
+alignment/utils.py      seeding, padding trim, cosine schedule
+alignment/jsonio.py     JSON and JSONL read/write helpers
 submission_adapter.py   thin wrappers around alignment/sft.py and alignment/dpo.py
 scripts/train_sft.py            SFT training loop
 scripts/train_dpo.py            from-scratch DPO training loop (--dataset hh | ultrafeedback)

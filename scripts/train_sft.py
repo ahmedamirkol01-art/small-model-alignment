@@ -7,7 +7,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from alignment.data import load_examples
 from alignment.sft import build_sft_batch, sft_loss, token_logprobs
-from alignment.utils import append_jsonl, cosine_with_warmup, set_seed, trim_padding, write_json
+from alignment.jsonio import append_jsonl, write_json
+from alignment.utils import cosine_with_warmup, set_seed, trim_padding
 
 
 def parse_args():

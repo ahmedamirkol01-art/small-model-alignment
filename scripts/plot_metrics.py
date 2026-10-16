@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from alignment.utils import read_json, read_jsonl
+from alignment.jsonio import read_json, read_jsonl
 
 TRAIN_COLOR = "#2a78d6"
 VAL_COLOR = "#eb6834"

@@ -3,7 +3,7 @@ import random
 
 from huggingface_hub import hf_hub_download
 
-from alignment.utils import read_json, write_json
+from alignment.jsonio import read_json, write_json
 
 
 def main():
